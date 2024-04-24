@@ -12,15 +12,19 @@
 
 # Build artifacts
 build/
+.ccls-cache/
+Testing/
 
 # CMake
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles/
+CMakeUserPresets.json
 cmake_install.cmake
 *.cmake
 !CMakeLists.txt
 compile_commands.json
 
 # emacs
+.projectile
 *.*~
