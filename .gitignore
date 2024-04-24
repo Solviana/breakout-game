@@ -1,0 +1,26 @@
+# Compiled object files
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+*.out
+
+# Compiled Static libraries
+*.lib
+*.a
+
+# Build artifacts
+build/
+
+# CMake
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.cmake
+!CMakeLists.txt
+compile_commands.json
+
+# emacs
+*.*~
