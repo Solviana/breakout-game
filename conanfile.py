@@ -8,6 +8,8 @@ class BreakoutGame(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "CMakeToolchain", "CMakeDeps"
 
+    options = {"test": [True, False]}
+
     def requirements(self):
         self.requires("sfml/2.6.1")
         self.test_requires("gtest/1.11.0")
@@ -22,4 +24,5 @@ class BreakoutGame(ConanFile):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
-        cmake.ctest(cli_args=["--output-on-failure"], stdout=sys.stdout)
+        if self.options.test:
+            cmake.build(target="run_test")
