@@ -1,5 +1,6 @@
 #include <entity.hpp>
 #include <gtest/gtest.h>
+#include <algorithm>
 
 struct position {
     int x,y;
@@ -86,4 +87,27 @@ TEST_F(entity_table_test, remove_component) {
     ASSERT_TRUE(bob.has<position>());
     bob.remove<position>();
     ASSERT_FALSE(bob.has<position>());
+}
+
+TEST_F(entity_table_test, kill_entity) {
+    auto bob = world.add_entity();
+    ASSERT_TRUE(bob.is_alive());
+    bob.kill();
+    ASSERT_FALSE(bob.is_alive());
+}
+
+TEST_F(entity_table_test, iterate_entity) {
+    /* Forward iterator unit test. */
+    auto bob = world.add_entity();
+    std::size_t hi = -1;
+    for(auto ent : world) {
+	ASSERT_EQ(ent.id(), ++hi);
+    }
+}
+
+TEST_F(entity_table_test, algorithm_count) {
+    /* Integration test with the std algorithm library. */
+    auto bob = world.add_entity();
+    auto alive_count = std::count_if(std::begin(world), std::end(world), [](auto ent){return ent.is_alive();});
+    EXPECT_EQ(alive_count, 1);
 }
