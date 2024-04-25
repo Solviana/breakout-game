@@ -79,3 +79,11 @@ TEST_F(entity_table_test, add_3_components_single_call) {
     ASSERT_TRUE(bob_lives);
     ASSERT_EQ(bob_lives->count, 5);
 }
+
+TEST_F(entity_table_test, remove_component) {
+    auto bob = world.add_entity();
+    bob.add(position{1,2}, velocity{3,4}, lives{5});
+    ASSERT_TRUE(bob.has<position>());
+    bob.remove<position>();
+    ASSERT_FALSE(bob.has<position>());
+}

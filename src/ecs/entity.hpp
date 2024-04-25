@@ -8,9 +8,6 @@
 
 namespace ecs {
 
-
-template<typename... Components> class entity;
-
 template <typename... Components> class entity_table {
 
     static constexpr std::size_t entity_count = 1000;
@@ -25,10 +22,47 @@ template <typename... Components> class entity_table {
     std::array<std::bitset<component_count>, entity_count> component_alive_status;
 
 public:
+    // helper class for referencing table columns
+    class entity {
+	std::size_t id;
+	::ecs::entity_table<Components...>* source_table;
 
-    template<typename...> friend class entity; // todo too many friends
+	entity(decltype(source_table) table, std::size_t id): source_table(table), id(id) {};
+    public:
 
-    // todo many components can this handle at compile time?
+	template<typename...> friend class ::ecs::entity_table;
+
+	template <typename Component>
+	[[nodiscard]] Component* get() {
+	    return source_table->template get<Component>(*this);
+	}
+
+	template <typename Component>
+	[[nodiscard]] bool has() {
+	    return source_table->template has<Component>(*this);
+	}
+
+	template<typename Component>
+	void add() {
+	    source_table->template add<Component>(*this);
+	}
+
+	template<typename... EntityComponents>
+	void add(EntityComponents&&... comps) {
+	    source_table->template add(*this, std::forward<EntityComponents>(comps)...);
+	}
+
+	template<typename...EntityComponents>
+	void remove() {
+	    source_table->template remove<EntityComponents...>(*this);
+	}
+
+	void kill() {
+	    source_table->kill_entity(*this);
+	}
+    }; // class entity
+
+    // todo how many components can this handle at compile time?
     template<typename T, std::size_t Index = 0>
     constexpr std::size_t get_component_index() const {
 	if constexpr (Index == std::tuple_size_v<decltype(components)>) {
@@ -42,11 +76,7 @@ public:
     }
 
     template<typename Component>
-    [[nodiscard]] Component* const get(entity<Components...>& ent) {
-	/*todo evaluate possible alternatives to avoid raw pointers:
-	  - std::optional<std::reference_wrapper<Component>> (extremely cumbersome)
-	  - std::pair<std::reference_wrapper<Component>, bool> (cumbersome)
-	  - simply return Component& (error prone from user side... what if the entity does not have the component)*/
+    [[nodiscard]] Component* const get(entity& ent) {
 	std::size_t component_id = get_component_index<Component>();
 	bool has_component = this->has<Component>(ent);
 	if(has_component) {
@@ -57,79 +87,53 @@ public:
     }
 
     template<typename Component>
-    [[nodiscard]] bool has(entity<Components...>& ent) const {
+    [[nodiscard]] bool has(entity& ent) const {
 	std::size_t component_id = get_component_index<Component>();
-        return component_alive_status[ent.id][component_id];
+        return component_alive_status[ent.id][component_id] && entity_alive_status[ent.id];
     }
 
-
     template<typename Component>
-    void add(entity<Components...>& ent) {
+    void add(entity& ent) {
 	std::size_t component_id = get_component_index<Component>();
 	component_alive_status[ent.id].set(component_id);
+	*(this->get<Component>(ent)) = Component(); // todo requirements default constructible
     }
 
     template<typename Component, typename... EntityComponents>
-    void add(entity<Components...>& ent, Component&& comp, EntityComponents&&... comps) {
+    void add(entity& ent, Component&& comp, EntityComponents&&... comps) {
 	std::size_t component_id = get_component_index<Component>();
 	component_alive_status[ent.id].set(component_id);
-	*(this->get<Component>(ent)) = std::forward<Component>(comp); // todo requirements todo does forwarding make sense here?
+	// todo requirements move/copy assignment
+	*(this->get<Component>(ent)) = std::forward<Component>(comp);
 
 	if constexpr (sizeof...(EntityComponents) > 0) {
 	    this->add(ent, std::forward<EntityComponents>(comps)...);
 	}
     }
 
+    template<typename Component, typename...EntityComponents>
+    void remove(entity& ent) {
+	std::size_t component_id = get_component_index<Component>();
+	component_alive_status[ent.id].reset(component_id);
 
-    auto add_entity() {
+	if constexpr (sizeof...(EntityComponents) > 0) {
+	    this->remove<EntityComponents...>(ent);
+	}
+    }
+
+    entity add_entity() {
       for (std::size_t i = 0; i < entity_count; i++) {
 	  if (!entity_alive_status[i]) {
 	      entity_alive_status.set(i);
-	      return entity<Components...>(this, i);
+	      return entity(this, i);
 	  }
       }
       throw "entity overflow";
     }
 
-    auto kill_entity() {
-      for (std::size_t i = 0; i < entity_count; i++) {
-	  if (!entity_alive_status[i]) {
-	      entity_alive_status.set(i);
-	      return entity<Components...>(this, i);
-	  }
-      }
-      throw "entity overflow";
-    }
-};
-
-template <typename... Components>
-class entity {
-    std::size_t id;
-    entity_table<Components...>* source_table;
-public:
-
-    template<typename...> friend class entity_table; // todo too many friends
-
-    entity(decltype(source_table) table, std::size_t id): source_table(table), id(id) {};
-
-    template <typename Component>
-    [[nodiscard]] Component* get() {
-	return source_table->template get<Component>(*this);
-    }
-
-    template <typename Component>
-    [[nodiscard]] bool has() {
-	return source_table->template has<Component>(*this);
-    }
-
-    template<typename Component>
-    void add() {
-	source_table->template add<Component>(*this);
-    }
-
-    template<typename... EntityComponents>
-    void add(EntityComponents&&... comps) {
-	source_table->template add(*this, std::forward<EntityComponents>(comps)...);
+    void kill_entity(entity& ent) {
+	entity_alive_status.reset(ent.id);
+	component_alive_status[ent.id].reset();
     }
 };
 
