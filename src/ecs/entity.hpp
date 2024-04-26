@@ -11,192 +11,202 @@ namespace ecs {
     // todo named entities
     template <typename... Components> class entity_table {
 
-	static constexpr std::size_t entity_count = 1000; // todo somewhere else?
-	static constexpr std::size_t component_count = sizeof...(Components);
+        static constexpr std::size_t entity_count = 1000; // todo somewhere else?
+        static constexpr std::size_t component_count = sizeof...(Components);
 
-	template <typename T>
-	using component_array = std::array<T, entity_count>;
-	using entity_container = std::tuple<component_array<Components>...>;
+        template <typename T>
+        using component_array = std::array<T, entity_count>;
+        using entity_container = std::tuple<component_array<Components>...>;
 
-	entity_container components;
-	std::bitset<entity_count> entity_alive_status;
-	std::array<std::bitset<component_count>, entity_count> component_alive_status;
+        entity_container components;
+        std::bitset<entity_count> entity_alive_status;
+        std::array<std::bitset<component_count>, entity_count> component_alive_status;
 
     public:
-	// helper class for referencing table columns
-	class entity {
-	    std::size_t id_;
-	    ::ecs::entity_table<Components...>* source_table;
+        // helper class for referencing table columns
+        class entity {
+            std::size_t id_;
+            ::ecs::entity_table<Components...>* source_table;
 
-	public:
+        public:
 
-	    entity(decltype(source_table) table, std::size_t id): source_table(table), id_(id) {};
+            entity(decltype(source_table) table, std::size_t id): source_table(table), id_(id) {};
 
-	    template <typename Component>
-	    [[nodiscard]] Component* get() {
-		return source_table->template get<Component>(*this);
-	    }
+            template <typename Component>
+            [[nodiscard]] Component* get() {
+                return source_table->template get<Component>(*this);
+            }
 
-	    template <typename Component>
-	    [[nodiscard]] bool has() {
-		return source_table->template has<Component>(*this);
-	    }
+            template <typename... EntityComponents>
+            [[nodiscard]] bool has() {
+                return source_table->template has<EntityComponents...>(*this);
+            }
 
-	    template<typename Component>
-	    void add() {
-		source_table->template add<Component>(*this);
-	    }
+            template<typename Component>
+            void add() {
+                source_table->template add<Component>(*this);
+            }
 
-	    template<typename... EntityComponents>
-	    void add(EntityComponents&&... comps) {
-		source_table->template add(*this, std::forward<EntityComponents>(comps)...);
-	    }
+            template<typename... EntityComponents>
+            void add(EntityComponents&&... comps) {
+                source_table->template add(*this, std::forward<EntityComponents>(comps)...);
+            }
 
-	    template<typename...EntityComponents>
-	    void remove() {
-		source_table->template remove<EntityComponents...>(*this);
-	    }
+            template<typename...EntityComponents>
+            void remove() {
+                source_table->template remove<EntityComponents...>(*this);
+            }
 
-	    void kill() {
-		source_table->kill_entity(*this);
-	    }
+            void kill() {
+                source_table->kill_entity(*this);
+            }
 
-	    [[nodiscard]] std::size_t id() const noexcept {
-		return this->id_;
-	    }
+            [[nodiscard]] std::size_t id() const noexcept {
+                return this->id_;
+            }
 
-	    [[nodiscard]] bool is_alive() const {
-		return source_table->is_alive(*this);
-	    }
-	}; // class entity_table<Components...>::entity
+            [[nodiscard]] bool is_alive() const {
+                return source_table->is_alive(*this);
+            }
+        }; // class entity_table<Components...>::entity
 
-	class iterator {
-	    entity_table<Components...>* source_table;
-	    std::size_t id_; // i should probably declare a size_type somewhere...
-	public:
+        class iterator {
+            entity_table<Components...>* source_table;
+            std::size_t id_; // i should probably declare a size_type somewhere...
+        public:
 
-	    using value_type = entity;
-	    using difference_type = std::ptrdiff_t;
-	    using pointer = value_type*;
-	    using reference = value_type&;
-	    using iterator_category = std::forward_iterator_tag;
+            using value_type = entity;
+            using difference_type = std::ptrdiff_t;
+            using pointer = value_type*;
+            using reference = value_type&;
+            using iterator_category = std::forward_iterator_tag;
 
-	    iterator(decltype(source_table) table, std::size_t id) : source_table(table), id_(id) {}
+            iterator(decltype(source_table) table, std::size_t id) : source_table(table), id_(id) {}
 
-	    value_type operator*() const {
-		return value_type(source_table, id_);
-	    }
+            value_type operator*() const {
+                return value_type(source_table, id_);
+            }
 
-	    iterator& operator++() {
-		++id_;
-		return *this;
-	    }
+            iterator& operator++() {
+                ++id_;
+                return *this;
+            }
 
-	    iterator operator++(int) {
-		iterator tmp = *this;
-		++(*this);
-		return tmp;
-	    }
+            iterator operator++(int) {
+                iterator tmp = *this;
+                ++(*this);
+                return tmp;
+            }
 
-	    bool operator==(const iterator& other) const {
-		return id_ == other.id_ && source_table == other.source_table;
-	    }
+            bool operator==(const iterator& other) const {
+                return id_ == other.id_ && source_table == other.source_table;
+            }
 
-	    bool operator!=(const iterator& other) const {
-		return !(*this == other);
-	    }
+            bool operator!=(const iterator& other) const {
+                return !(*this == other);
+            }
 
-	    friend difference_type operator-(const iterator& lhs, const iterator& rhs) {
-		return static_cast<difference_type>(lhs.id) - static_cast<difference_type>(rhs.id);
-	    }
+            friend difference_type operator-(const iterator& lhs, const iterator& rhs) {
+                return static_cast<difference_type>(lhs.id) - static_cast<difference_type>(rhs.id);
+            }
 
-	}; // class entity_table<Components...>::interator
+        }; // class entity_table<Components...>::interator
 
-	iterator begin() {
-	    return iterator(this, 0);
-	}
+        iterator begin() {
+            return iterator(this, 0);
+        }
 
-	iterator end() {
-	    return iterator(this, entity_count);
-	}
+        iterator end() {
+            return iterator(this, entity_count);
+        }
 
-	// todo how many components can this handle at compile time?
-	template<typename T, std::size_t Index = 0>
-	constexpr std::size_t get_component_index() const {
-	    if constexpr (Index == std::tuple_size_v<decltype(components)>) {
-		static_assert(Index != std::tuple_size_v<decltype(components)>, "Component type is not in the tuple.");
-		return Index; // unreachable
-	    } else if constexpr (std::is_same_v<component_array<T>, std::tuple_element_t<Index, decltype(components)>>) {
-		return Index;
-	    } else {
-		return get_component_index<T, Index + 1>();
-	    }
-	}
+        // todo how many components can this handle at compile time?
+        template<typename T, std::size_t Index = 0>
+        constexpr std::size_t get_component_index() const {
+            if constexpr (Index == std::tuple_size_v<decltype(components)>) {
+                static_assert(Index != std::tuple_size_v<decltype(components)>, "Component type is not in the tuple.");
+                return Index; // unreachable
+            } else if constexpr (std::is_same_v<component_array<T>, std::tuple_element_t<Index, decltype(components)>>) {
+                return Index;
+            } else {
+                return get_component_index<T, Index + 1>();
+            }
+        }
 
-	template<typename Component>
-	[[nodiscard]] Component* const get(entity& ent) {
-	    std::size_t component_id = get_component_index<Component>();
-	    bool has_component = this->has<Component>(ent);
-	    if(has_component) {
-		return &std::get<component_array<Component>>(components)[ent.id()];
-	    } else {
-		return nullptr;
-	    }
-	}
+        template<typename Component>
+        [[nodiscard]] Component* const get(entity& ent) {
+            std::size_t component_id = get_component_index<Component>();
+            bool has_component = this->has<Component>(ent);
+            if(has_component) {
+                return &std::get<component_array<Component>>(components)[ent.id()];
+            } else {
+                return nullptr;
+            }
+        }
 
-	template<typename Component>
-	[[nodiscard]] bool has(const entity& ent) const {
-	    std::size_t component_id = get_component_index<Component>();
-	    return component_alive_status[ent.id()][component_id] && entity_alive_status[ent.id()];
-	}
+        /*template<typename Component>
+        [[nodiscard]] bool has(const entity& ent) const {
+            std::size_t component_id = get_component_index<Component>();
+            return component_alive_status[ent.id()][component_id] && entity_alive_status[ent.id()];
+            }*/
 
-	template<typename Component>
-	void add(entity& ent) {
-	    std::size_t component_id = get_component_index<Component>();
-	    component_alive_status[ent.id()].set(component_id);
-	    *(this->get<Component>(ent)) = Component(); // todo requirements default constructible
-	}
+        template<typename Component, typename... EntityComponents>
+        [[nodiscard]] bool has(const entity& ent) const {
+            std::size_t component_id = get_component_index<Component>();
+            if constexpr (sizeof...(EntityComponents) > 0) {
+                return component_alive_status[ent.id()][component_id] && has<EntityComponents...>(ent);
+            } else {
+                return component_alive_status[ent.id()][component_id] && entity_alive_status[ent.id()];
+            }
+        }
 
-	template<typename Component, typename... EntityComponents>
-	void add(entity& ent, Component&& comp, EntityComponents&&... comps) {
-	    std::size_t component_id = get_component_index<Component>();
-	    component_alive_status[ent.id()].set(component_id);
-	    // todo requirements move/copy assignment
-	    *(this->get<Component>(ent)) = std::forward<Component>(comp);
+        template<typename Component>
+        void add(entity& ent) {
+            std::size_t component_id = get_component_index<Component>();
+            component_alive_status[ent.id()].set(component_id);
+            *(this->get<Component>(ent)) = Component(); // todo requirements default constructible
+        }
 
-	    if constexpr (sizeof...(EntityComponents) > 0) {
-		this->add(ent, std::forward<EntityComponents>(comps)...);
-	    }
-	}
+        template<typename Component, typename... EntityComponents>
+        void add(entity& ent, Component&& comp, EntityComponents&&... comps) {
+            std::size_t component_id = get_component_index<Component>();
+            component_alive_status[ent.id()].set(component_id);
+            // todo requirements move/copy assignment
+            *(this->get<Component>(ent)) = std::forward<Component>(comp);
 
-	template<typename Component, typename...EntityComponents>
-	void remove(entity& ent) {
-	    std::size_t component_id = get_component_index<Component>();
-	    component_alive_status[ent.id()].reset(component_id);
+            if constexpr (sizeof...(EntityComponents) > 0) {
+                this->add(ent, std::forward<EntityComponents>(comps)...);
+            }
+        }
 
-	    if constexpr (sizeof...(EntityComponents) > 0) {
-		this->remove<EntityComponents...>(ent);
-	    }
-	}
+        template<typename Component, typename...EntityComponents>
+        void remove(entity& ent) {
+            std::size_t component_id = get_component_index<Component>();
+            component_alive_status[ent.id()].reset(component_id);
 
-	entity add_entity() {
-	    for (std::size_t i = 0; i < entity_count; i++) {
-		if (!entity_alive_status[i]) {
-		    entity_alive_status.set(i);
-		    return entity(this, i);
-		}
-	    }
-	    throw "entity overflow";
-	}
+            if constexpr (sizeof...(EntityComponents) > 0) {
+                this->remove<EntityComponents...>(ent);
+            }
+        }
 
-	void kill_entity(entity& ent) {
-	    entity_alive_status.reset(ent.id());
-	    component_alive_status[ent.id()].reset();
-	}
+        entity add_entity() {
+            for (std::size_t i = 0; i < entity_count; i++) {
+                if (!entity_alive_status[i]) {
+                    entity_alive_status.set(i);
+                    return entity(this, i);
+                }
+            }
+            throw "entity overflow";
+        }
 
-	bool is_alive(const entity& ent) {
-	    return entity_alive_status[ent.id()];
-	}
+        void kill_entity(entity& ent) {
+            entity_alive_status.reset(ent.id());
+            component_alive_status[ent.id()].reset();
+        }
+
+        bool is_alive(const entity& ent) {
+            return entity_alive_status[ent.id()];
+        }
     };
 
 } // namespace ecs
