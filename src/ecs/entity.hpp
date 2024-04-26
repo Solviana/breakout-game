@@ -15,7 +15,7 @@ namespace ecs {
         static constexpr std::size_t component_count = sizeof...(Components);
 
         template <typename T>
-        using component_array = std::array<T, entity_count>;
+        using component_array = std::array<T, entity_count>; // std::decay_t?
         using entity_container = std::tuple<component_array<Components>...>;
 
         entity_container components;
@@ -126,19 +126,19 @@ namespace ecs {
             if constexpr (Index == std::tuple_size_v<decltype(components)>) {
                 static_assert(Index != std::tuple_size_v<decltype(components)>, "Component type is not in the tuple.");
                 return Index; // unreachable
-            } else if constexpr (std::is_same_v<component_array<T>, std::tuple_element_t<Index, decltype(components)>>) {
+            } else if constexpr (std::is_same_v<component_array<std::decay_t<T>>, std::tuple_element_t<Index, decltype(components)>>) { // todo std::decay_t?
                 return Index;
             } else {
-                return get_component_index<T, Index + 1>();
+                return get_component_index<std::decay_t<T>, Index + 1>(); // todo std::decay_t?
             }
         }
 
         template<typename Component>
-        [[nodiscard]] Component* const get(entity& ent) {
+        [[nodiscard]] std::decay_t<Component>* const get(entity& ent) {
             std::size_t component_id = get_component_index<Component>();
             bool has_component = this->has<Component>(ent);
             if(has_component) {
-                return &std::get<component_array<Component>>(components)[ent.id()];
+                return &std::get<component_array<std::decay_t<Component>>>(components)[ent.id()]; // todo std::decay_t?
             } else {
                 return nullptr;
             }
