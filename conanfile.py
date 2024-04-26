@@ -10,6 +10,8 @@ class BreakoutGame(ConanFile):
 
     options = {"test": [True, False]}
 
+    default_options = {"test": True}
+
     def requirements(self):
         self.requires("sfml/2.6.1")
         self.test_requires("gtest/1.11.0")
