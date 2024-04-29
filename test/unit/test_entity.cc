@@ -1,4 +1,4 @@
-#include <entity.hpp>
+#include <ecs.hpp>
 #include <gtest/gtest.h>
 #include <algorithm>
 
@@ -15,7 +15,7 @@ struct lives {
 };
 
 struct entity_table_test : public testing::Test {
-    ecs::entity_table<position, velocity, lives> world;
+    ecs<position, velocity, lives> world;
 };
 
 TEST_F(entity_table_test, empty_entity) {
