@@ -3,6 +3,7 @@
 
 #include <array>
 #include <bitset>
+#include <string>
 #include <tuple>
 #include <functional>
 
@@ -19,24 +20,29 @@ template <typename... Components> class ecs {
     entity_container components;
     std::bitset<entity_count> entity_alive_status;
     std::array<std::bitset<component_count>, entity_count> component_alive_status;
+    std::unordered_map<std::string, std::size_t> names;
 
 public:
-    // helper class for referencing table columns
+    // helper class for referencing table columns:
+    // cheap to copy
+    // immutable
     class entity {
         std::size_t id_;
-        ecs<Components...>* source_table;
+        ecs<Components...>* source_table; // this should never be a nullptr
 
+	entity(decltype(source_table) table, std::size_t id)
+	    : source_table(table), id_(id){};
+
+	friend class ecs<Components...>;
+	friend class iterator;
     public:
 
-        entity(decltype(source_table) table, std::size_t id): source_table(table), id_(id) {};
-
-        template <typename Component>
-        [[nodiscard]] Component* get() {
-            return source_table->template get<Component>(*this);
+      template <typename Component>[[nodiscard]] Component *get() {
+        return source_table->template get<Component>(*this);
         }
 
         template <typename... EntityComponents>
-        [[nodiscard]] bool has() {
+        [[nodiscard]] bool has() noexcept {
             return source_table->template has<EntityComponents...>(*this);
         }
 
@@ -51,11 +57,11 @@ public:
         }
 
         template<typename...EntityComponents>
-        void remove() {
+        void remove() noexcept {
             source_table->template remove<EntityComponents...>(*this);
         }
 
-        void kill() {
+        void kill() noexcept {
             source_table->kill_entity(*this);
         }
 
@@ -63,9 +69,10 @@ public:
             return this->id_;
         }
 
-        [[nodiscard]] bool is_alive() const {
+        [[nodiscard]] bool is_alive() const noexcept {
             return source_table->is_alive(*this);
         }
+
     }; // class ecs<Components...>::entity
 
     class iterator {
@@ -82,7 +89,7 @@ public:
         iterator(decltype(source_table) table, std::size_t id) : source_table(table), id_(id) {}
 
         value_type operator*() const {
-            return value_type(source_table, id_);
+            return value_type(source_table, id_); // todo this will not fail if the end() iterator is dereferenced
         }
 
         iterator& operator++() {
@@ -142,14 +149,8 @@ public:
         }
     }
 
-    /*template<typename Component>
-      [[nodiscard]] bool has(const entity& ent) const {
-      std::size_t component_id = get_component_index<Component>();
-      return component_alive_status[ent.id()][component_id] && entity_alive_status[ent.id()];
-      }*/
-
     template<typename Component, typename... EntityComponents>
-    [[nodiscard]] bool has(const entity& ent) const {
+    [[nodiscard]] bool has(const entity& ent) const noexcept {
         std::size_t component_id = get_component_index<Component>();
         if constexpr (sizeof...(EntityComponents) > 0) {
             return component_alive_status[ent.id()][component_id] && has<EntityComponents...>(ent);
@@ -178,7 +179,7 @@ public:
     }
 
     template<typename Component, typename...EntityComponents>
-    void remove(entity& ent) {
+    void remove(entity& ent) noexcept {
         std::size_t component_id = get_component_index<Component>();
         component_alive_status[ent.id()].reset(component_id);
 
@@ -197,12 +198,33 @@ public:
         throw "entity overflow";
     }
 
-    void kill_entity(entity& ent) {
+    entity add_entity(std::string&& name) {
+        for (std::size_t i = 0; i < entity_count; i++) {
+            if (!entity_alive_status[i]) {
+                entity_alive_status.set(i);
+                names[std::move(name)] = i;
+                return entity(this, i);
+            }
+        }
+        throw "entity overflow";
+    }
+
+    void kill_entity(entity& ent) noexcept {
         entity_alive_status.reset(ent.id());
         component_alive_status[ent.id()].reset();
     }
 
-    bool is_alive(const entity& ent) {
+    iterator find_entity(const std::string& name) noexcept {
+        auto it = names.find(name);
+        if(it != names.end()) {
+            return iterator(this, it->second);
+        }
+        else {
+            return this->end();
+        }
+    }
+
+    bool is_alive(const entity& ent) noexcept {
         return entity_alive_status[ent.id()];
     }
 };

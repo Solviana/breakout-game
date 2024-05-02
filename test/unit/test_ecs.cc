@@ -2,6 +2,8 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 
+using namespace std::literals::string_literals;
+
 struct position {
     int x,y;
 };
@@ -117,6 +119,20 @@ TEST_F(entity_table_test, iterate_entity) {
 TEST_F(entity_table_test, algorithm_count) {
     /* Integration test with the std algorithm library. */
     auto bob = world.add_entity();
-    auto alive_count = std::count_if(std::begin(world), std::end(world), [](auto ent){return ent.is_alive();});
+    auto alive_count = std::count_if(std::begin(world), std::end(world),
+                                     [](auto ent) { return ent.is_alive(); });
     EXPECT_EQ(alive_count, 1);
+}
+
+TEST_F(entity_table_test, named_entity_find_by_name) {
+    world.add_entity("bob"s);
+    auto bob_it = world.find_entity("bob"s);
+    EXPECT_FALSE(bob_it == world.end());
+    EXPECT_TRUE(bob_it->is_alive());
+}
+
+TEST_F(entity_table_test, named_entity_find_by_invalid_name) {
+    world.add_entity("bob"s);
+    auto bob_it = world.find_entity("bobb"s);
+    EXPECT_TRUE(bob_it == world.end());
 }

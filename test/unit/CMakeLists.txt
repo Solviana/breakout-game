@@ -34,8 +34,8 @@ add_custom_target(run_test
 )
 
 declare_test(
-    TEST_NAME entity
-    TEST_SOURCES test_entity.cc
+    TEST_NAME ecs
+    TEST_SOURCES test_ecs.cc
     TEST_LINK_LIBRARIES ecs
     LINK_TO_TARGET run_test
 )
