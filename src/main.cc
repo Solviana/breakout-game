@@ -13,6 +13,7 @@ void level1(breakout::world_type& world) {
     for (auto ent : world) {
         ent.kill();
     }
+
     auto ball_sprite = sf::CircleShape{10.0};
     ball_sprite.setFillColor(sf::Color::Blue);
 
@@ -27,7 +28,7 @@ void level1(breakout::world_type& world) {
         sf::RectangleShape({constants::window_width, 10.0});
     boundary_sprite_vertical.setFillColor(sf::Color::White);
 
-    auto paddle = world.add_entity();
+    auto paddle = world.add_entity("paddle"s);
     paddle.add(
                position{constants::window_width / 2, constants::window_height - 30},
                sf::RectangleShape{{100.0, 10.0}},
@@ -35,11 +36,11 @@ void level1(breakout::world_type& world) {
                reflector{},
                control{{sf::Keyboard::Left, sf::Keyboard::Right}});
 
-    auto ball = world.add_entity();
+    auto ball = world.add_entity("ball"s);
     ball.add(position{constants::window_width / 2, constants::window_height / 2},
-             ball_sprite,
-             bounding_box{20, 20},
-             velocity{4.0, -4.0});
+		    ball_sprite,
+		    bounding_box{20, 20},
+		    velocity{4.0, -4.0});
 
     auto edge_left = world.add_entity();
     edge_left.add(position{0.0, 0.0}, boundary_sprite_vertical,
@@ -65,15 +66,16 @@ void level1(breakout::world_type& world) {
                     boundary_sprite_horizontal,
                     bounding_box{boundary_sprite_horizontal.getSize().x,
                                  boundary_sprite_horizontal.getSize().y},
+		    reflector{},
                     deadly{});
 
     const int cols = 10;
     const int rows = 4;
-    const int brick_spacing = 10;
-    const int brick_offset_top = 30;
-    const int brick_offset_side = 20;
+    const int brick_spacing = 30;
+    const int brick_offset_top = 50;
+    const int brick_offset_side = 80;
     const int brick_height =
-        (constants::window_height / 4 - brick_offset_top - rows * brick_spacing) /
+        (constants::window_height / 3 - brick_offset_top - rows * brick_spacing) /
         rows;
     const int brick_width =
         (constants::window_width - cols * brick_spacing - 2 * brick_offset_side) /
@@ -99,6 +101,7 @@ int main() {
     auto game_window = std::shared_ptr<sf::RenderWindow>(new sf::RenderWindow{{constants::window_width, constants::window_height}, "Breakout v1"s});
     breakout::systems::render_system render_sys{game_window};
     breakout::systems::control_system control_sys{game_window};
+    breakout::systems::rule_system rule_sys{game_window};
     breakout::systems::dynamics_system move_sys{};
     breakout::systems::collision_system collision_sys{};
 
@@ -106,21 +109,13 @@ int main() {
     game_window->setFramerateLimit(60);      // Max rate is 60 frames per second
 
     while (game_window->isOpen()) {
-        game_window->clear(sf::Color::Black);
-        sf::Event event{};
 
-        while (game_window->pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
-                game_window->close();
-            }
-        }
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)) {
-        }
 
         move_sys.process(world);
         control_sys.process(world);
         collision_sys.process(world);
+	rule_sys.process(world);
         render_sys.process(world);
         // Display the updated graphics
         game_window->display();

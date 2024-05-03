@@ -5,7 +5,7 @@ namespace breakout::systems {
 	for(auto ent1 : world) {
 	    if(ent1.has<position, velocity, bounding_box>()) {
 		for (auto ent2 : world) {
-		    if(ent2.has<reflector, position, bounding_box>()) {
+		    if(ent2.has<reflector, position, bounding_box>() && ent2.id() != ent1.id() && ent1.is_alive()) {
 			this->process_collision(ent1, ent2);
 		    }
 		}
@@ -18,7 +18,7 @@ namespace breakout::systems {
 	auto* pos2 = e2.get<position>();
 	auto* bbox1 = e1.get<bounding_box>();
 	auto* bbox2 = e2.get<bounding_box>();
-	sf::FloatRect box1{*pos1, *bbox1};
+	sf::FloatRect box1{*pos1, *bbox1}; // todo unsafe
 	sf::FloatRect box2{*pos2, *bbox2};
 
 	if (box1.intersects(box2)) {

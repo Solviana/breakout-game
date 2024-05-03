@@ -128,7 +128,7 @@ TEST_F(entity_table_test, named_entity_find_by_name) {
     world.add_entity("bob"s);
     auto bob_it = world.find_entity("bob"s);
     EXPECT_FALSE(bob_it == world.end());
-    EXPECT_TRUE(bob_it->is_alive());
+    EXPECT_TRUE((*bob_it).is_alive());
 }
 
 TEST_F(entity_table_test, named_entity_find_by_invalid_name) {

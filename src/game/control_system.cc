@@ -33,4 +33,4 @@ namespace breakout::systems {
 	}
     }
 
-}
+} // namespace breakout::systems

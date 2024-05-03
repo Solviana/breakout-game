@@ -5,4 +5,4 @@ namespace breakout {
 	static world_type instance{};
 	return instance;
     }
-} // namespace breakout::systems
+} // namespace breakout
