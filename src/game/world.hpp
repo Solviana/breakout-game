@@ -1,14 +1,15 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include "components.hpp"
 #include "ecs.hpp"
+#include "components.hpp"
+#include "constants.hpp"
 
-extern template class ecs<position, velocity, reflector, lives, bounding_box, control,
+extern template class ecs<position, velocity, reflector, velocity_reflector, distance_reflector, lives, bounding_box, control,
 					deadly, sf::RectangleShape, sf::CircleShape>;
 
 namespace breakout {
-    using world_type = ecs<position, velocity, reflector, lives, bounding_box,
+    using world_type = ecs<position, velocity, reflector, velocity_reflector, distance_reflector, lives, bounding_box,
 			   control, deadly, sf::RectangleShape, sf::CircleShape>;
 
     class world {

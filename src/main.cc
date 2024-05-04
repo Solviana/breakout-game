@@ -3,12 +3,6 @@
 
 using namespace std::string_literals;
 
-struct constants {
-  static constexpr int window_width{1024};
-  static constexpr int window_height{768};
-};
-
-
 void level1(breakout::world_type& world) {
     for (auto ent : world) {
         ent.kill();
@@ -31,9 +25,12 @@ void level1(breakout::world_type& world) {
     auto paddle = world.add_entity("paddle"s);
     paddle.add(
                position{constants::window_width / 2, constants::window_height - 30},
+	       velocity{0.0,0.0},
                sf::RectangleShape{{100.0, 10.0}},
                bounding_box{100.0, 10.0},
                reflector{},
+	       velocity_reflector{},
+	       distance_reflector{},
                control{{sf::Keyboard::Left, sf::Keyboard::Right}});
 
     auto ball = world.add_entity("ball"s);
@@ -110,10 +107,8 @@ int main() {
 
     while (game_window->isOpen()) {
 
-
-
-        move_sys.process(world);
         control_sys.process(world);
+        move_sys.process(world);
         collision_sys.process(world);
 	rule_sys.process(world);
         render_sys.process(world);
