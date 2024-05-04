@@ -39,3 +39,10 @@ declare_test(
     TEST_LINK_LIBRARIES ecs
     LINK_TO_TARGET run_test
 )
+
+declare_test(
+    TEST_NAME collision_system
+    TEST_SOURCES test_collision_system.cc
+    TEST_LINK_LIBRARIES game
+    LINK_TO_TARGET run_test
+)

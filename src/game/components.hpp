@@ -4,11 +4,24 @@
 #include <SFML/Graphics.hpp>
 #include <set>
 
-struct position : public sf::Vector2f {using sf::Vector2f::Vector2;};
+struct position : public sf::Vector2f {using sf::Vector2f::Vector2f;};
 
-struct velocity : public sf::Vector2f {using sf::Vector2f::Vector2;};
+struct velocity : public sf::Vector2f {
+    using sf::Vector2f::Vector2f;
+
+    velocity& operator=(const sf::Vector2f& other) {
+        if (this != &other) {
+            sf::Vector2f::operator=(other);
+        }
+        return *this;
+    }
+};
 
 struct reflector {};
+
+struct distance_reflector {};
+
+struct velocity_reflector {};
 
 struct lives {int count;};
 
