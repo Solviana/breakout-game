@@ -84,35 +84,27 @@ void level1(breakout::world_type& world) {
         float y = brick_offset_top + i * (brick_height + brick_spacing);
         for (int j = 0; j < cols; j++) {
             float x = brick_offset_side + j * (brick_width + brick_spacing);
-            world.add_entity().add(
-                                   position{x, y}, brick_sprite,
-                                   bounding_box{brick_sprite.getSize().x, brick_sprite.getSize().y},
-                                   reflector{}, lives{1});
+            world.add_entity().add(position{x, y}, brick_sprite,
+                                   bounding_box{brick_sprite.getSize().x,
+                                                brick_sprite.getSize().y},
+                                   reflector{}, lives{1}, brick{});
         }
     }
 }
 
 // The main function for the program
 int main() {
-    breakout::world_type& world = breakout::world::get();
     auto game_window = std::shared_ptr<sf::RenderWindow>(new sf::RenderWindow{{constants::window_width, constants::window_height}, "Breakout v1"s});
-    breakout::systems::render_system render_sys{game_window};
-    breakout::systems::control_system control_sys{game_window};
-    breakout::systems::rule_system rule_sys{game_window};
-    breakout::systems::dynamics_system move_sys{};
-    breakout::systems::collision_system collision_sys{};
-
+    breakout::world_type& world = breakout::world::get();
     level1(world);
-    game_window->setFramerateLimit(60);      // Max rate is 60 frames per second
 
-    while (game_window->isOpen()) {
+    breakout::game_manager game{game_window,
+				new breakout::systems::control_system(game_window),
+				new breakout::systems::rule_system(game_window),
+				new breakout::systems::dynamics_system(),
+				new breakout::systems::collision_system(),
+				new breakout::systems::render_system(game_window)};
 
-        control_sys.process(world);
-        move_sys.process(world);
-        collision_sys.process(world);
-	rule_sys.process(world);
-        render_sys.process(world);
-        // Display the updated graphics
-        game_window->display();
-    }
+    game.play();
+    return 0;
 }

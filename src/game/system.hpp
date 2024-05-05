@@ -3,10 +3,11 @@
 
 #include <world.hpp>
 
-namespace breakout::systems {
+namespace breakout {
     class system {
     public:
-	virtual void process(breakout::world_type& world) = 0;
+        virtual void process(world_type& world) = 0;
+        virtual ~system() = default;
     };
-} // namespace breakout::systems
+} // namespace breakout
 #endif /* SYSTEM_H */

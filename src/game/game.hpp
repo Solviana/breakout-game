@@ -7,5 +7,6 @@
 #include "render_system.hpp"
 #include "rule_system.hpp"
 #include "world.hpp"
+#include "game_manager.hpp"
 
 #endif /* GAME_H */
